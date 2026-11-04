@@ -1,3 +1,4 @@
+import { setupAgenda } from "./agenda.js";
 import {
   cards,
   cardFor,
@@ -192,6 +193,7 @@ function deviceList() {
   }
 }
 function initDesk() {
+  setupAgenda();
   setupTeaching(write, say);
   $("reset-activity").onclick = () => {
     if (remove("start") && remove("lesson"))
@@ -273,7 +275,7 @@ function initDesk() {
   deviceList();
   window.addEventListener("storage", deviceList);
 }
-if (location.hash && !setup) {
+if (location.hash && location.hash !== "#main" && !setup) {
   say("This setup link is incomplete or expired. Ask for a new link.");
   initDesk();
 } else if (setup) {

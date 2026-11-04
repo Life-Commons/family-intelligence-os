@@ -148,6 +148,41 @@ export function startStory(card) {
     status("Take discarded. You can record another.");
     el("record").focus();
   };
+  el("source-note").onclick = async () => {
+    const original = file;
+    if (!original) return;
+    try {
+      const bytes = await original.arrayBuffer();
+      const hash = Array.from(
+        new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
+        (x) => x.toString(16).padStart(2, "0"),
+      ).join("");
+      if (original !== file) return;
+      const note = {
+        format: "family-source-note/1",
+        kind: "oral-history",
+        review: "unreviewed-recollection",
+        prompt: card.title,
+        captureEndedAt: new Date(original.lastModified).toISOString(),
+        filename: original.name,
+        mediaType: original.type,
+        bytes: original.size,
+        sha256: hash,
+      };
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(
+        new Blob([JSON.stringify(note, null, 2)], { type: "application/json" }),
+      );
+      a.download = "sunday-story.source.json";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+      status(
+        "Source note download requested. Keep it beside the original audio.",
+      );
+    } catch {
+      status("Source note unavailable. You can still download your audio.");
+    }
+  };
   el("download").onclick = () => {
     unsaved = false;
     status("Download requested. Check your files before closing this tab.");

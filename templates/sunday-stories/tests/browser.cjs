@@ -84,6 +84,17 @@ const { chromium } = require("playwright");
     await phone.locator("#download").click();
     const file = await download;
     assert.ok((await readFile(await file.path())).length > 100);
+    const noteDownload = phone.waitForEvent("download");
+    await phone.locator("#source-note").click();
+    const note = JSON.parse(
+      await readFile(await (await noteDownload).path(), "utf8"),
+    );
+    const bytes = await readFile(await file.path());
+    assert.equal(
+      note.sha256,
+      require("node:crypto").createHash("sha256").update(bytes).digest("hex"),
+    );
+    assert.equal(note.bytes, bytes.length);
     await phone.locator("#discard").click();
     assert.equal(await phone.locator("#review").isVisible(), false);
     await phone.locator("#story summary").click();
@@ -134,6 +145,23 @@ const { chromium } = require("playwright");
       await phone.screenshot({ path: process.env.SCREEN_DIR + "/phone.png" });
     await desk.getByRole("button", { name: "Forget entry" }).click();
     await desk.getByText("Your first setup will appear here.").waitFor();
+    await desk.locator("#agenda summary").click();
+    await desk
+      .locator("#agenda-file")
+      .setInputFiles({
+        name: "fixture.ics",
+        mimeType: "text/calendar",
+        buffer: Buffer.from(
+          "BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:visit\nDTSTART:20321105T120000Z\nSUMMARY:Family visit\nEND:VEVENT\nEND:VCALENDAR",
+        ),
+      });
+    await desk.getByText(/1 of 1 upcoming/).waitFor();
+    assert.match(
+      await desk.locator("#agenda-list").textContent(),
+      /Family visit/,
+    );
+    await desk.locator("#agenda-clear").click();
+    assert.equal(await desk.locator("#agenda-list").textContent(), "");
     await desk.locator("#teaching summary").click();
     const draft =
       "Sky shapes\nLook up together.\nFind a cloud.\nDraw an outline.\nCompare your sketches.";

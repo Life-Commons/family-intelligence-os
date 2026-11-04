@@ -115,6 +115,22 @@
             </p>
           </section>
         </div>
+        <details id="agenda">
+          <summary>See upcoming visits from a family calendar</summary>
+          <p>
+            Choose an exported .ics file to preview up to six upcoming visits in
+            this tab. Titles and times stay on this device. Recurring events and
+            timezone-tagged or floating times are omitted. Your calendar stays
+            authoritative.
+          </p>
+          <label for="agenda-file">Calendar export · up to 512 KB</label
+          ><input type="file" id="agenda-file" accept=".ics,text/calendar" />
+          <p id="agenda-status" role="status"></p>
+          <ol id="agenda-list"></ol>
+          <button id="agenda-clear" class="secondary" hidden>
+            Clear calendar snapshot
+          </button>
+        </details>
         <details id="teaching">
           <summary>Prepare a card with a parent or teacher</summary>
           <p>
@@ -246,7 +262,10 @@
               <a class="button" id="download" download>Download audio</a
               ><button class="secondary" id="share" hidden>
                 Choose where to share</button
-              ><button class="quiet" id="discard">Discard take</button>
+              ><button class="secondary" id="source-note">
+                Download source note
+              </button>
+              <button class="quiet" id="discard">Discard take</button>
             </div>
           </div>
         </div>

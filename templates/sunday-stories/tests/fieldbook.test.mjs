@@ -89,3 +89,41 @@ test("adult cards are bounded plain text with exactly three steps", () => {
   ])
     assert.equal(reviewedCard(input), null);
 });
+import { readAgenda } from "../public/agenda.js";
+test("local calendar preview unfolds titles and omits private fields, unknown time zones and recurrences", () => {
+  const event = (id, start, extra = "") =>
+    [
+      "BEGIN:VEVENT",
+      "UID:" + id,
+      start,
+      "SUMMARY:Family\\,",
+      "  visit",
+      "DESCRIPTION:Private notes",
+      "BEGIN:VALARM",
+      "SUMMARY:Alarm content",
+      "END:VALARM",
+      extra,
+      "END:VEVENT",
+    ].join("\r\n");
+  const calendar = [
+    "BEGIN:VCALENDAR",
+    event("1", "DTSTART:20320103T110000Z"),
+    event("2", "DTSTART;VALUE=DATE:20320102"),
+    event("3", "DTSTART;TZID=Europe/Amsterdam:20320102T100000"),
+    event("4", "DTSTART:20320102T100000Z", "RRULE:FREQ=WEEKLY"),
+    event("5", "DTSTART:20320230T100000Z"),
+    "END:VCALENDAR",
+  ].join("\r\n");
+  const preview = readAgenda(calendar, new Date("2032-01-01T00:00:00Z"));
+  assert.equal(preview.total, 2);
+  assert.equal(preview.skipped, 3);
+  assert.equal(preview.visits[0].allDay, true);
+  assert.equal(preview.visits[1].title, "Family, visit");
+  assert.doesNotMatch(JSON.stringify(preview), /Private|Alarm/);
+  assert.throws(() =>
+    readAgenda(
+      calendar.replace("BEGIN:VCALENDAR", "BEGIN:VCALENDAR\nMETHOD:CANCEL"),
+    ),
+  );
+  assert.throws(() => readAgenda("x".repeat(524289)));
+});
