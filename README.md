@@ -80,3 +80,7 @@ The first deployment target is a Vercel preview for `apps/web`. Production promo
 ## Family legacy workspace (2026-10-02)
 
 The dashboard now connects capture, source-linked graph concepts, next-generation learning, workflow packs and runtime setup. [Architecture and actual maturity](docs/sovereign-family-workspace.md) · [Library OS bridge](docs/library-bridge.md) · [Ontology](docs/ontology-engineering.md) · [Portable plugin](plugins/family-intelligence/) · [Railway](infra/railway/README.md). Capture downloads a local private draft; private vault persistence and runtime connectors are not yet activated.
+
+### Sunday Stories founder kit
+
+[Sunday Stories](templates/sunday-stories/README.md) is a separately deployable, MIT-licensed fieldbook. Prepare an activity for a phone, schedule a visit in a calendar, record and export a story locally, or review a teacher’s learning card. The kit has no family identity, archive or model credentials. Its setup codes carry no portal permissions. [Product and deployment decisions](docs/sunday-stories-release.md).
