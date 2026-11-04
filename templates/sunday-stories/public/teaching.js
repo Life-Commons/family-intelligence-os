@@ -18,6 +18,13 @@ export function setupTeaching(write, say) {
   const el = (id) => document.getElementById(id);
   const brief =
     "Draft a five-minute, adult-led activity about a topic I choose. Ask for the topic only. Return exactly five plain text lines: a title (80 characters maximum), an introduction (180 maximum), and three concrete steps (300 each). Use common household materials, no accounts, links, personal data or external contact. An adult will review it before use.";
+  const fields = [
+    "activity-title",
+    "activity-intro",
+    "activity-one",
+    "activity-two",
+    "activity-three",
+  ];
   let approvedLines = null,
     revision = 0;
   el("teacher-brief").onclick = async () => {
@@ -62,9 +69,28 @@ export function setupTeaching(write, say) {
     el("activate-card").hidden = !fromFile;
     say("Review the complete card before approving it.");
   }
+  fields.forEach((id) => el(id).addEventListener("input", reset));
   el("teacher-draft").oninput = reset;
+  el("apply-draft").onclick = () => {
+    const lines = el("teacher-draft").value.trim().split(/\r?\n/);
+    if (!reviewedCard(lines)) {
+      say(
+        "The draft needs a title, introduction and three steps, one per line.",
+      );
+      return;
+    }
+    reset();
+    fields.forEach((id, index) => {
+      el(id).value = lines[index];
+    });
+    el("ai-draft").open = false;
+    el("activity-title").focus();
+  };
   el("preview-draft").onclick = () =>
-    preview(el("teacher-draft").value.trim().split(/\r?\n/), false);
+    preview(
+      fields.map((id) => el(id).value),
+      false,
+    );
   el("export-card").onclick = () => {
     if (!approvedLines) return;
     const a = document.createElement("a");

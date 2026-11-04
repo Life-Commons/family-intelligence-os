@@ -10,8 +10,13 @@ import {
 import { setupTeaching, reviewedCard } from "./teaching.js";
 import { startStory } from "./story.js";
 const $ = (id) => document.getElementById(id);
+let noticeTimer;
 const say = (message) => {
+  clearTimeout(noticeTimer);
   $("notice").textContent = message;
+  noticeTimer = setTimeout(() => {
+    $("notice").textContent = "";
+  }, 8000);
 };
 const prefix = "sunday-stories.v1.";
 function read(key) {
@@ -68,11 +73,11 @@ function showPhone(key) {
   ) {
     $("receipt").hidden = false;
     $("receipt-code").textContent = saved.code;
-    $("phone").querySelector("details").open = true;
   }
 }
 function initActivity(view, key) {
   $(view).hidden = false;
+  $("main-nav").hidden = true;
   showPhone(key);
   if (view === "story") {
     startStory(cards[key]);
@@ -84,23 +89,36 @@ function initActivity(view, key) {
   $("lesson-intro").textContent = card.intro;
   function showStep() {
     const done = i === card.steps.length;
-    $("step-no").textContent = done
-      ? "FINISHED"
-      : "FIELD NOTE 0" + (i + 1) + " / 03";
-    $("step").textContent = done ? "Fieldwork complete." : card.steps[i][0];
+    document
+      .querySelectorAll(".lesson-progress span")
+      .forEach((segment, index) => {
+        segment.classList.toggle("complete", index <= i);
+      });
+    $("lesson-progress").setAttribute(
+      "aria-valuenow",
+      String(Math.min(i + 1, 3)),
+    );
+    $("prev-step").hidden = i === 0;
+    $("step-no").textContent = done ? "FINISHED" : "Step " + (i + 1) + " of 3";
+    $("step").textContent = done ? "A discovery to share." : card.steps[i][0];
     $("instruction").textContent = done
       ? "Tell each other one thing you noticed."
       : card.steps[i][1];
     $("next-step").textContent = done
-      ? "Start again"
+      ? "Do it again"
       : i === 2
-        ? "Finish activity"
+        ? "Finish"
         : "Next step";
   }
   $("next-step").onclick = () => {
     i = (i + 1) % (card.steps.length + 1);
     showStep();
     $("step").tabIndex = -1;
+    $("step").focus();
+  };
+  $("prev-step").onclick = () => {
+    i = Math.max(0, i - 1);
+    showStep();
     $("step").focus();
   };
   showStep();
@@ -126,6 +144,7 @@ function deviceList() {
   } catch {
     say("The phone notebook requires local storage.");
   }
+  $("device-count").textContent = entries.length;
   if (!entries.length) {
     const p = document.createElement("p");
     p.className = "empty";
@@ -177,10 +196,14 @@ function deviceList() {
           say("Setup acknowledged.");
         }
       };
-      row.append(form);
+      const check = document.createElement("details");
+      const heading = document.createElement("summary");
+      heading.textContent = "Confirm their choice";
+      check.append(heading, form);
+      row.append(check);
     }
     const forget = document.createElement("button");
-    forget.className = "quiet";
+    forget.className = "text-button";
     forget.textContent = "Forget entry";
     forget.onclick = () => {
       if (remove(key)) {
@@ -200,6 +223,42 @@ function initDesk() {
       say("Saved activity cleared from this browser.");
   };
   $("desk").hidden = false;
+  const isSetup = params.get("view") === "setup";
+  $("home-panel").hidden = isSetup;
+  $("setup-panel").hidden = !isSetup;
+  $(isSetup ? "setup-nav" : "home-link").setAttribute("aria-current", "page");
+  let question = "kitchen";
+  $("other-question").onclick = () => {
+    question = question === "kitchen" ? "place" : "kitchen";
+    $("pick-title").textContent = cards[question].title;
+    $("open-story").href = link("story", question);
+  };
+  document.querySelectorAll("[data-open-dialog]").forEach((button) => {
+    button.onclick = () => $(button.dataset.openDialog).showModal();
+  });
+  document.querySelectorAll("[data-close-dialog]").forEach((button) => {
+    button.onclick = () => button.closest("dialog").close();
+  });
+  document.querySelectorAll("dialog").forEach((dialog) => {
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) {
+        const rect = dialog.getBoundingClientRect();
+        if (
+          event.clientX < rect.left ||
+          event.clientX > rect.right ||
+          event.clientY < rect.top ||
+          event.clientY > rect.bottom
+        )
+          dialog.close();
+      }
+    });
+  });
+  $("new-setup").onclick = () => {
+    $("prepare").hidden = false;
+    $("handoff").hidden = true;
+    $("setup-step").textContent = "1 of 2";
+    $("pack").focus();
+  };
   for (const [key, card] of Object.entries(cards))
     $("pack").add(new Option(card.name, key));
   $("prepare").onsubmit = (e) => {
@@ -220,14 +279,31 @@ function initDesk() {
     });
     $("setup-link").value = url.href;
     $("handoff").hidden = false;
+    $("prepare").hidden = true;
+    $("setup-step").textContent = "2 of 2";
+    $("share-link").hidden = typeof navigator.share !== "function";
+    ($("share-link").hidden ? $("copy-link") : $("share-link")).focus();
     deviceList();
     say("Setup link ready. It expires in seven days.");
+  };
+  $("share-link").onclick = async () => {
+    try {
+      await navigator.share({
+        title: "A little something for you",
+        text: "An activity for us to enjoy together.",
+        url: $("setup-link").value,
+      });
+      say("Share sheet completed.");
+    } catch (error) {
+      if (error.name !== "AbortError") say("You can copy the link instead.");
+    }
   };
   $("copy-link").onclick = async () => {
     try {
       await navigator.clipboard.writeText($("setup-link").value);
       say("Setup link copied.");
     } catch {
+      $("setup-link").closest("details").open = true;
       $("setup-link").select();
       say("Select and copy the link above.");
     }
@@ -280,7 +356,8 @@ if (location.hash && location.hash !== "#main" && !setup) {
   initDesk();
 } else if (setup) {
   $("welcome").hidden = false;
-  $("welcome-name").textContent = cards[setup.card].name;
+  $("main-nav").hidden = true;
+  $("welcome-name").textContent = cards[setup.card].title;
   $("once").onclick = () => openCard(setup.card);
   $("accept").onclick = () => {
     if (!validSetup(location.hash)) {

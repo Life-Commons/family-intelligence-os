@@ -30,6 +30,7 @@ const { chromium } = require("playwright");
     requests = [];
   async function page(context) {
     const p = await context.newPage();
+    p.setDefaultTimeout(10000);
     p.on("pageerror", (e) => errors.push(String(e)));
     p.on("request", (r) => requests.push([r.method(), r.url()]));
     return p;
@@ -45,18 +46,55 @@ const { chromium } = require("playwright");
     const desk = await page(adult),
       phone = await page(relative);
     await desk.goto(base);
-    await desk.getByRole("heading", { name: "Sunday Stories." }).waitFor();
+    await desk.getByRole("heading", { name: "A moment together." }).waitFor();
     if (process.env.SCREEN_DIR)
       await desk.screenshot({ path: process.env.SCREEN_DIR + "/desk.png" });
+    assert.equal(await desk.locator("#pack").isVisible(), false);
+    await desk.locator("#other-question").click();
+    assert.equal(
+      await desk.locator("#pick-title").textContent(),
+      "Where did your family gather?",
+    );
+    await desk.locator("#setup-nav").click();
+    await desk.evaluate(() => {
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        value: async (payload) => {
+          window.sharedSetup = payload;
+        },
+      });
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: async () => {
+            throw new Error("Unavailable");
+          },
+        },
+      });
+    });
     await desk.selectOption("#pack", "place");
-    await desk.getByText("Prepare setup link", { exact: true }).click();
+    await desk.getByText("Create setup link", { exact: true }).click();
+    assert.equal(await desk.locator("#prepare").isVisible(), false);
+    await desk.locator("#share-link").click();
     const invite = await desk.locator("#setup-link").inputValue();
+    assert.equal(await desk.evaluate(() => window.sharedSetup.url), invite);
+    await desk.locator("#copy-link").click();
+    assert.ok(await desk.locator("#setup-link").isVisible());
     await phone.goto(invite);
+    if (process.env.SCREEN_DIR)
+      await phone.screenshot({ path: process.env.SCREEN_DIR + "/welcome.png" });
     await phone.locator("#accept").click();
     await phone
       .getByRole("heading", { name: "Where did your family gather?" })
       .waitFor();
+    if (process.env.SCREEN_DIR)
+      await phone.screenshot({
+        path: process.env.SCREEN_DIR + "/story-ready.png",
+      });
+    await phone.locator("#phone summary").click();
     const code = await phone.locator("#receipt-code").textContent();
+    await desk.locator("#prepared-phones > summary").click();
+    await desk.locator(".device details > summary").click();
     const input = desk.getByLabel("Returned setup code");
     await input.fill("000000");
     await desk.locator(".device form button").click();
@@ -64,6 +102,7 @@ const { chromium } = require("playwright");
     await input.fill(code);
     await desk.locator(".device form button").click();
     await desk.reload();
+    await desk.locator("#prepared-phones > summary").click();
     await desk.getByText("Acknowledged by returned code").waitFor();
     await phone.goto(base);
     await phone
@@ -80,11 +119,16 @@ const { chromium } = require("playwright");
       () => document.getElementById("audio").readyState >= 2,
     );
     await phone.locator("audio").evaluate((a) => a.play());
+    if (process.env.SCREEN_DIR)
+      await phone.screenshot({
+        path: process.env.SCREEN_DIR + "/story-review.png",
+      });
     const download = phone.waitForEvent("download");
     await phone.locator("#download").click();
     const file = await download;
     assert.ok((await readFile(await file.path())).length > 100);
     const noteDownload = phone.waitForEvent("download");
+    await phone.locator(".more-options summary").click();
     await phone.locator("#source-note").click();
     const note = JSON.parse(
       await readFile(await (await noteDownload).path(), "utf8"),
@@ -97,7 +141,7 @@ const { chromium } = require("playwright");
     assert.equal(note.bytes, bytes.length);
     await phone.locator("#discard").click();
     assert.equal(await phone.locator("#review").isVisible(), false);
-    await phone.locator("#story summary").click();
+    await phone.locator("#writing summary").click();
     await phone.locator("#story-text").fill("A synthetic field note.");
     const writing = phone.waitForEvent("download");
     await phone.locator("#save-text").click();
@@ -105,6 +149,8 @@ const { chromium } = require("playwright");
       await readFile(await (await writing).path(), "utf8"),
       /synthetic field note/,
     );
+    await desk.locator("#home-link").click();
+    await desk.getByRole("button", { name: /Make time for a visit/ }).click();
     await desk.locator("#when").fill("2031-11-02T16:00");
     const calendar = desk.waitForEvent("download");
     await desk.getByText("Download calendar event", { exact: true }).click();
@@ -116,14 +162,33 @@ const { chromium } = require("playwright");
       await desk.locator("#google-event").getAttribute("href"),
       /dates=/,
     );
+    await desk.keyboard.press("Escape");
+    assert.equal(await desk.locator("#plan-dialog").isVisible(), false);
     await phone.goto(base + "/?view=learn&card=map");
+    await phone.locator("#next-step").click();
+    assert.equal(
+      await phone.locator("#lesson-progress").getAttribute("aria-valuenow"),
+      "2",
+    );
+    await phone.locator("#prev-step").click();
+    assert.equal(
+      await phone.locator("#instruction").textContent(),
+      "Ask a grown-up to describe a room or garden they remember. Start with one object.",
+    );
     for (let i = 0; i < 3; i++) await phone.locator("#next-step").click();
-    await phone.getByRole("heading", { name: "Fieldwork complete." }).waitFor();
+    await phone
+      .getByRole("heading", { name: "A discovery to share." })
+      .waitFor();
     await phone.locator("#next-step").click();
     await phone.getByRole("heading", { name: "Choose one place." }).waitFor();
     for (const width of [320, 390, 768, 1280]) {
       await desk.setViewportSize({ width, height: 800 });
       await desk.goto(base + "/?view=desk");
+      if (process.env.SCREEN_DIR)
+        await desk.screenshot({
+          path: process.env.SCREEN_DIR + "/home-" + width + ".png",
+          fullPage: true,
+        });
       assert.ok(
         await desk.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
@@ -143,18 +208,21 @@ const { chromium } = require("playwright");
     assert.ok(await phone.locator("#record").isEnabled());
     if (process.env.SCREEN_DIR)
       await phone.screenshot({ path: process.env.SCREEN_DIR + "/phone.png" });
+    await desk.goto(base + "/?view=setup");
+    await desk.locator("#prepared-phones > summary").click();
     await desk.getByRole("button", { name: "Forget entry" }).click();
     await desk.getByText("Your first setup will appear here.").waitFor();
-    await desk.locator("#agenda summary").click();
+    await desk.locator("#home-link").click();
     await desk
-      .locator("#agenda-file")
-      .setInputFiles({
-        name: "fixture.ics",
-        mimeType: "text/calendar",
-        buffer: Buffer.from(
-          "BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:visit\nDTSTART:20321105T120000Z\nSUMMARY:Family visit\nEND:VEVENT\nEND:VCALENDAR",
-        ),
-      });
+      .getByRole("button", { name: "Add calendar", exact: true })
+      .click();
+    await desk.locator("#agenda-file").setInputFiles({
+      name: "fixture.ics",
+      mimeType: "text/calendar",
+      buffer: Buffer.from(
+        "BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:visit\nDTSTART:20321105T120000Z\nSUMMARY:Family visit\nEND:VEVENT\nEND:VCALENDAR",
+      ),
+    });
     await desk.getByText(/1 of 1 upcoming/).waitFor();
     assert.match(
       await desk.locator("#agenda-list").textContent(),
@@ -162,16 +230,23 @@ const { chromium } = require("playwright");
     );
     await desk.locator("#agenda-clear").click();
     assert.equal(await desk.locator("#agenda-list").textContent(), "");
-    await desk.locator("#teaching summary").click();
+    await desk.locator("#setup-nav").click();
+    await desk.locator("#teaching > summary").click();
     const draft =
       "Sky shapes\nLook up together.\nFind a cloud.\nDraw an outline.\nCompare your sketches.";
+    await desk.locator("#ai-draft summary").click();
     await desk.locator("#teacher-draft").fill(draft);
+    await desk.locator("#apply-draft").click();
+    assert.equal(
+      await desk.locator("#activity-title").inputValue(),
+      "Sky shapes",
+    );
     await desk.locator("#preview-draft").click();
     const cardDownload = desk.waitForEvent("download");
     await desk.locator("#export-card").click();
     const cardPath = await (await cardDownload).path();
-    await phone.goto(base + "/?view=desk");
-    await phone.locator("#teaching summary").click();
+    await phone.goto(base + "/?view=setup");
+    await phone.locator("#teaching > summary").click();
     await phone.locator("#card-file").setInputFiles(cardPath);
     await phone.locator("#activate-card").click();
     await phone.getByRole("heading", { name: "Sky shapes" }).waitFor();

@@ -30,7 +30,7 @@ export function startStory(card) {
     el("audio").hidden = true;
     el("review").hidden = true;
     el("download").removeAttribute("href");
-    el("stage").textContent = "Tell it in your own words.";
+    el("stage").textContent = "Take your time.";
     el("record").hidden = false;
     el("record").disabled = false;
   }
@@ -67,11 +67,12 @@ export function startStory(card) {
       navigator.canShare && navigator.canShare({ files: [file] })
     );
     el("review").hidden = false;
+    el("audio").focus();
     el("stage").textContent = "Listen to your story.";
     status(
       failed
         ? "Recording was interrupted. Review the part that was captured."
-        : "Recording stopped. Press play to review your take.",
+        : "Press play to listen.",
     );
   }
   const canRecord = !!(
@@ -118,7 +119,7 @@ export function startStory(card) {
       r.start(1000);
       el("record").hidden = true;
       el("stop").hidden = false;
-      el("stage").textContent = "Recording your voice…";
+      el("stage").textContent = "We’re listening.";
       el("stop").focus();
       const start = Date.now();
       status("Microphone on. Stop whenever you like.");

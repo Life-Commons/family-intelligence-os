@@ -96,13 +96,11 @@ export function readAgenda(text, now = new Date()) {
     })
     .sort((a, b) => a.start - b.start);
   return {
-    visits: future
-      .slice(0, 6)
-      .map(({ title, start, allDay }) => ({
-        title: title || "Calendar event",
-        start,
-        allDay,
-      })),
+    visits: future.slice(0, 6).map(({ title, start, allDay }) => ({
+      title: title || "Calendar event",
+      start,
+      allDay,
+    })),
     skipped,
     total: future.length,
   };
@@ -118,6 +116,8 @@ export function setupAgenda() {
     list.replaceChildren();
     status.textContent = "";
     clear.hidden = true;
+    document.getElementById("agenda-empty").hidden = false;
+    document.getElementById("agenda-error").textContent = "";
   }
   clear.onclick = () => {
     file.value = "";
@@ -153,8 +153,11 @@ export function setupAgenda() {
         data.skipped +
         " unsupported or cancelled entries omitted.";
       clear.hidden = false;
+      document.getElementById("agenda-empty").hidden = data.visits.length > 0;
+      document.getElementById("agenda-dialog").close();
     } catch (error) {
-      if (token === generation) status.textContent = error.message;
+      if (token === generation)
+        document.getElementById("agenda-error").textContent = error.message;
     }
   };
 }
