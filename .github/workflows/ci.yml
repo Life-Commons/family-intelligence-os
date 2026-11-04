@@ -25,6 +25,8 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - name: Sunday Stories release contracts
+        run: node --test templates/sunday-stories/tests/*.test.mjs
       - name: Install
         run: pnpm install --frozen-lockfile
       - name: Typecheck

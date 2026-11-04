@@ -1,0 +1,8 @@
+{
+  "name": "family-commons-sunday-stories",
+  "main": "dist/worker.mjs",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "observability": { "enabled": false },
+  "build": { "command": "node scripts/build-worker.mjs" },
+}

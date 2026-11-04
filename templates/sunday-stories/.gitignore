@@ -1,0 +1,4 @@
+dist/
+.wrangler/
+.vercel/
+node_modules/

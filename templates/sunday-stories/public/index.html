@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#f8f4e9" />
+    <meta name="referrer" content="no-referrer" />
+    <meta
+      name="description"
+      content="A family fieldbook for Sunday stories, guided activities and a little time together."
+    />
+    <title>Sunday Stories · Family Commons</title>
+    <link rel="icon" href="./icon.svg" />
+    <link rel="apple-touch-icon" href="./icon-192.png" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header>
+      <div class="brand">
+        <img src="./icon.svg" width="38" height="38" alt="" /><span
+          >Family Commons</span
+        >
+      </div>
+      <span class="edition">THE SUNDAY EDITION</span>
+    </header>
+    <main id="main">
+      <noscript
+        >This fieldbook needs JavaScript to prepare activities or record a
+        story.</noscript
+      >
+      <section id="desk" hidden>
+        <div class="spread">
+          <div>
+            <p class="eyebrow"><span class="dot"></span> THE FAMILY DESK</p>
+            <h1>Sunday Stories<span class="period">.</span></h1>
+            <p class="lead">
+              One question for someone you love. One small thing to make
+              together.
+            </p>
+            <a class="button" href="?view=story"
+              >Open the story card <span aria-hidden="true">↗</span></a
+            >
+          </div>
+          <figure>
+            <img src="./landscape.svg" alt="" />
+            <figcaption>FIELD NOTES &nbsp; / &nbsp; VOL. 01</figcaption>
+          </figure>
+        </div>
+        <div class="folio">
+          <span>THIS WEEK’S FIELDBOOK</span><span>01 — 03</span>
+        </div>
+        <div class="columns">
+          <section class="chapter">
+            <p class="num">01 <i></i> INVITE</p>
+            <h2>Prepare a phone</h2>
+            <p>
+              Choose what opens on a relative’s phone. They decide whether to
+              keep it.
+            </p>
+            <form id="prepare">
+              <label for="pack">Activity to send</label
+              ><select id="pack"></select
+              ><button>Prepare setup link</button>
+            </form>
+            <div id="handoff" hidden class="note">
+              <label for="setup-link">Open on the other phone</label
+              ><input id="setup-link" readonly /><button
+                id="copy-link"
+                class="quiet"
+              >
+                Copy link
+              </button>
+              <p>Open the link together or send it yourself.</p>
+            </div>
+          </section>
+          <section class="chapter">
+            <p class="num">02 <i></i> MAKE TIME</p>
+            <h2>A time to talk</h2>
+            <p>
+              Put a story visit on the family calendar. Choose a time and
+              confirm it in your calendar app.
+            </p>
+            <form id="remind">
+              <label for="when">Visit time on this device</label
+              ><input id="when" type="datetime-local" required /><button
+                class="secondary"
+              >
+                Download calendar event
+              </button>
+            </form>
+            <a
+              id="google-event"
+              class="inline"
+              href="https://calendar.google.com/calendar/"
+              target="_blank"
+              rel="noreferrer"
+              >Open in Google Calendar ↗</a
+            >
+          </section>
+          <section class="chapter">
+            <p class="num">03 <i></i> EXPLORE</p>
+            <h2>A curious afternoon</h2>
+            <p>
+              Be a sound detective or draw a map of a remembered place. Each
+              card has three steps to do together.
+            </p>
+            <a class="button secondary" href="?view=learn&amp;card=sounds"
+              >Try a learning card ↗</a
+            >
+            <p class="fine">
+              Adult-selected cards · Works without an AI account
+            </p>
+          </section>
+        </div>
+        <details id="teaching">
+          <summary>Prepare a card with a parent or teacher</summary>
+          <p>
+            Write a five-minute activity, or copy the brief into an adult’s AI
+            account to draft it. Use a topic such as birds or music. Leave names
+            and family records out.
+          </p>
+          <div class="actions">
+            <button id="teacher-brief" class="secondary">
+              Copy adult AI brief</button
+            ><a
+              href="https://chatgpt.com/"
+              target="_blank"
+              rel="noreferrer"
+              class="inline"
+              >Open ChatGPT ↗</a
+            >
+          </div>
+          <textarea
+            id="teacher-prompt"
+            readonly
+            hidden
+            aria-label="Adult AI brief"
+          ></textarea>
+          <label for="teacher-draft"
+            >Activity draft · title, introduction and three steps, one per
+            line</label
+          >
+          <textarea
+            id="teacher-draft"
+            rows="6"
+            maxlength="1600"
+            placeholder="Listen for birds&#10;A five-minute activity with an adult.&#10;Find a comfortable spot together.&#10;Draw a sound you hear.&#10;Compare your drawings."
+          ></textarea>
+          <button id="preview-draft" class="secondary">Review the card</button>
+          <div id="teacher-review" class="note" hidden>
+            <p class="eyebrow">ADULT REVIEW</p>
+            <h3 id="teacher-title"></h3>
+            <p id="teacher-intro"></p>
+            <ol id="teacher-steps"></ol>
+            <p>
+              Approve only activities you would do together. The card file
+              contains exactly the text above.
+            </p>
+            <button id="export-card">Approve and download card</button>
+          </div>
+          <label for="card-file"
+            >On the receiving phone, review a card file together</label
+          >
+          <input type="file" id="card-file" accept="application/json,.json" />
+          <button id="reset-activity" class="quiet">
+            Clear the saved activity on this browser
+          </button>
+          <button id="activate-card" class="secondary" hidden>
+            Use reviewed card on this browser
+          </button>
+        </details>
+        <section class="ledger">
+          <div>
+            <p class="eyebrow">SETUP NOTEBOOK</p>
+            <h2>Prepared phones</h2>
+            <p>
+              Kept in this browser. A returned code records someone’s
+              acknowledgement.
+            </p>
+          </div>
+          <div id="devices"></div>
+        </section>
+        <details>
+          <summary>Where do our calendar, files and plans live?</summary>
+          <p>
+            Your calendar owns the visit. After reviewing a recording, download
+            it or use your phone’s share sheet to choose a destination. A shared
+            Drive folder works when its access list fits the storyteller’s
+            wishes. Notion can hold the family’s weekly plan.
+          </p>
+          <p class="links">
+            <a
+              href="https://drive.google.com/drive/my-drive"
+              target="_blank"
+              rel="noreferrer"
+              >Open Drive ↗</a
+            ><a href="https://www.notion.so/" target="_blank" rel="noreferrer"
+              >Open Notion ↗</a
+            >
+          </p>
+          <p class="fine">
+            These links open your apps. No account is connected here.
+          </p>
+        </details>
+      </section>
+      <section id="welcome" class="narrow" hidden>
+        <p class="eyebrow">PHONE SETUP</p>
+        <h1>Your fieldbook.</h1>
+        <p class="lead" id="welcome-name"></p>
+        <p>
+          Set this activity as the first screen on this browser. You can also
+          open it just once.
+        </p>
+        <button id="accept">Use on this phone</button>
+        <button class="secondary" id="once">Open once</button>
+        <p class="fine">
+          This sets a local preference. Your microphone, files and accounts stay
+          under your control.
+        </p>
+      </section>
+      <section id="story" class="narrow" hidden>
+        <p class="eyebrow">01 &nbsp; / &nbsp; THE STORY CARD</p>
+        <h1 id="question"></h1>
+        <p class="lead" id="cue"></p>
+        <div class="card">
+          <p class="eyebrow">YOUR VOICE</p>
+          <h2 id="stage">Tell it in your own words.</h2>
+          <p id="rec-status" role="status">
+            Record your own voice for up to two minutes. You can listen before
+            saving.
+          </p>
+          <div class="actions">
+            <button id="record">Record my story</button
+            ><button id="stop" hidden>Stop recording</button
+            ><button class="secondary" id="read" hidden>
+              Read question aloud
+            </button>
+          </div>
+          <audio controls id="audio" hidden></audio>
+          <div id="review" hidden>
+            <p>The recording is in this tab. Save a copy before closing it.</p>
+            <div class="actions">
+              <a class="button" id="download" download>Download audio</a
+              ><button class="secondary" id="share" hidden>
+                Choose where to share</button
+              ><button class="quiet" id="discard">Discard take</button>
+            </div>
+          </div>
+        </div>
+        <details>
+          <summary>Prefer to write?</summary>
+          <label for="story-text">Write a few lines</label
+          ><textarea id="story-text" rows="4" maxlength="12000"></textarea
+          ><button id="save-text" class="secondary">
+            Download written story
+          </button>
+          <p class="fine">Text stays in the tab until you download it.</p>
+        </details>
+      </section>
+      <section id="learn" class="narrow" hidden>
+        <p class="eyebrow">02 &nbsp; / &nbsp; LITTLE FIELD SCHOOL</p>
+        <h1 id="lesson-title"></h1>
+        <p id="lesson-intro" class="lead"></p>
+        <article class="card">
+          <p class="eyebrow" id="step-no"></p>
+          <h2 id="step"></h2>
+          <p id="instruction"></p>
+          <button id="next-step">Next step</button>
+        </article>
+        <p class="fine">
+          Made for doing together. No sign-in, microphone or messages.
+        </p>
+      </section>
+      <aside id="phone" class="narrow footnote" hidden>
+        <details>
+          <summary>Keep this activity on your phone</summary>
+          <p>
+            On iPhone, open in Safari, tap Share, then Add to Home Screen. On
+            Android, open the browser menu and choose Install app or Add to Home
+            screen. Open the icon once and check the activity. Some browsers
+            keep installed apps in a separate storage space.
+          </p>
+          <a class="inline" id="bookmark">Bookmark this exact activity</a>
+          <div id="receipt" hidden>
+            <p>Tell the person who prepared the phone this setup code.</p>
+            <strong id="receipt-code"></strong>
+            <p class="fine">
+              It acknowledges your choice. It gives no access to this phone.
+            </p>
+          </div>
+        </details>
+      </aside>
+      <p id="notice" class="notice" role="status"></p>
+    </main>
+    <footer>
+      <span>Family Commons</span><span>A family-owned fieldbook</span>
+    </footer>
+  </body>
+</html>
